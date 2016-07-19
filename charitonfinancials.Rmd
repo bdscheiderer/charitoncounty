@@ -1,0 +1,89 @@
+---
+title: "Analysis of Chariton County Annual Financial Reports"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+## Introduction
+This is an R Markdown document recording the step by step analysis of the Chariton County (Missouri) financial reports from 2009 through 2015. Chariton County currently has a population of 7,589 residents, and an assessed valuation of $216,030,641. The data in the dataset **chariton.csv** comes directly from the annual reports published in the Chariton County Journal newspaper the last week of February of ever year. 
+
+**Summary:** Chariton County currently has over 5.2 million dollars in savings. The average annual surplus for the past seven years is just over $340,000 (excluding outlier year 2013). The annual surplus is the excess of all county revenues minus all county expenditures. In 2015, the county began the year with $4,542,000 in cash, and ended the year 2015 with $5,222,000 cash on hand. In 2015 the cash on hand earned $74,000 in interest for the county. The 2015 surplus, that is excess revenues over expenditures, was $679,000.
+
+Here is the data file:
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(scales)
+chariton <- read.csv('./charitonfinancials.csv')
+```
+
+```{r}
+chariton
+```
+
+The variables in the dataset represent the following data:  
+**year** = reporting year, January 1 through December 31  
+**begincash** = reported amount of cash on hand at the beginning of the year  
+**revenues** = total amount of money received from the county, includes property tax, sales tax,   law enforcement tax, road and bridge tax, federal and state funds, etc.  
+**propertytax** = amount of revenues received from the county property tax  
+**salestax** = amount of revenues received from the county sales tax  
+**interest** = amount of interest received from the cash in the county's accounts  
+**expenditures** = total amount of money spent by the county  
+**surplus** = difference between revenues and expenditures each year  
+**endcash** = reported amount of cash on hand at the end of the year  
+
+All amounts are in U.S. dollars ($).  
+
+From the dataset, we can see that in 2015, the county began the year with $4,542,000 in cash, and ended the year with $5,222,000 cash on hand. This amount of cash on hand earned $74,000 in interest for the county. The 2015 surplus, that is excess revenues over expenditures, was $679,000. The average annual surplus over the past seven years is $507,000:
+```{r, echo=FALSE}
+round(mean(chariton[, 'surplus']))
+```
+Removing the surplus for year 2013 (an unusual year with one-time property tax receipt from the pipeline company), the average surplus is over $340,000:
+```{r, echo=FALSE}
+round(mean(chariton[c(1,2,3,4,6,7), "surplus"]))
+```
+Using the latter number, the average, annual revenue surplus exceeds $340,000, which has resulted in a healthy "rainy day" fund of over $5.2 million at the end of 2015.
+
+The mean of the different variables in the dataset is:
+```{r, echo=FALSE}
+round(colMeans(chariton[, c(2, 3, 4, 5, 7, 8, 9)]))
+```
+
+## Plots of the data
+
+Plotting the annual revenues, expenditures, surplus, and ending cash balance for the past seven years, with a bar chart:
+```{r, echo = FALSE}
+chariton.melt <- melt(chariton[, c(1,3, 7, 8, 9)], id=c('year'),vars=c('revenues', 'expenditures', 'propertytax', 'salestax', 'surplus', 'endcash'))
+ggplot(data=chariton.melt, aes(year, value)) +
+  geom_bar(aes(fill=variable), stat = 'identity', position = 'dodge')  +
+  labs(list(title = "Chariton County Financial Summary (2009-2015)", x = "Year", y = "US $")) +
+  scale_y_continuous(labels=comma) +
+  scale_x_continuous(breaks = round(seq(min(chariton.melt$year), max(chariton.melt$year), by = 1))) +
+  scale_fill_discrete(name=NULL, breaks=c('revenues', 'expenditures', 'endcash', 'surplus'), labels=c('Revenues', 'Expenditures', 'Cash on Hand', 'Surplus'))
+```
+
+A line chart is more readable:
+```{r, echo=FALSE}
+ggplot(data=chariton.melt, aes(x=year, y=value, group=variable, color=variable)) +
+  geom_line() +
+  geom_point(size=3, fill='white') +
+  labs(list(title = "Chariton County Financial Summary (2009-2015)", x = "Year", y = "US $")) +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(breaks = round(seq(min(chariton.melt$year), max(chariton.melt$year), by = 1))) +
+  scale_colour_discrete(name=NULL, breaks=c('revenues', 'expenditures', 'endcash', 'surplus'), labels=c('Revenues', 'Expenditures', 'Cash on Hand', 'Surplus'))
+```
+
+
+
+## Additional information:
+More information about the county can be found here: https://en.wikipedia.org/wiki/Chariton_County,_Missouri. 
+
+The names and contact information for the county elected officials can be found at this site: http://www.mocounties.com/chariton-county.php. 
+
+Audits performed by the Missouri State Auditor can be found at http://app.auditor.mo.gov/AuditReports/AudRpt2.aspx?t=chariton.
+
+**END**
